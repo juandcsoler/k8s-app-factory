@@ -1,0 +1,9 @@
+apiVersion: platform.juandc.dev/v1alpha1
+kind: CoreApp
+metadata:
+  labels:
+    app.kubernetes.io/name: k8s-app-factory
+    app.kubernetes.io/managed-by: kustomize
+  name: coreapp-sample
+spec:
+  # TODO(user): Add fields here
