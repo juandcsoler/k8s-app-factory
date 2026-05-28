@@ -1,5 +1,5 @@
 /*
-Copyright 2026.
+Copyright 2026 Juandi.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -183,8 +183,12 @@ func main() {
 	}
 
 	if err := (&controller.CoreAppReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		GenericReconciler: controller.GenericReconciler{
+			Client:   mgr.GetClient(),
+			Scheme:   mgr.GetScheme(),
+			Recorder: mgr.GetEventRecorder("coreapp-controller"),
+			Strategy: controller.CoreAppStrategy{},
+		},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "coreapp")
 		os.Exit(1)

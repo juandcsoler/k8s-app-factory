@@ -1,5 +1,5 @@
 /*
-Copyright 2026.
+Copyright 2026 Juandi.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	appsv1 "k8s.io/api/apps/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	platformv1alpha1 "github.com/juandcsoler/k8s-app-factory/api/v1alpha1"
 )
@@ -33,52 +33,60 @@ import (
 var _ = Describe("CoreApp Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
-
 		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
+			Namespace: "default",
 		}
-		coreapp := &platformv1alpha1.CoreApp{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind CoreApp")
-			err := k8sClient.Get(ctx, typeNamespacedName, coreapp)
-			if err != nil && errors.IsNotFound(err) {
-				resource := &platformv1alpha1.CoreApp{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
+			// 1. Damos datos válidos al Spec para que el Reconcile no falle
+			resource := &platformv1alpha1.CoreApp{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      resourceName,
+					Namespace: "default",
+				},
+				Spec: platformv1alpha1.CoreAppSpec{
+					Image: "nginx:latest",
+					Port:  8080,
+					// AÑADIMOS ESTO PARA QUE PASE LA VALIDACIÓN
+					Autoscaling: platformv1alpha1.Autoscaling{ // Ajusta el nombre del Struct si el tuyo es distinto
+						MaxReplicas: 1,
 					},
-					// TODO(user): Specify other spec details if needed.
-				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
+				},
 			}
+			Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 		})
 
 		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
+			By("Cleanup the specific resource instance CoreApp")
 			resource := &platformv1alpha1.CoreApp{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
-
-			By("Cleanup the specific resource instance CoreApp")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
-		It("should successfully reconcile the resource", func() {
-			By("Reconciling the created resource")
-			controllerReconciler := &CoreAppReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
-			}
 
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
+		It("debería crear el Deployment y marcar Ready=True", func() {
+			// REGLA DE ORO DEL TUTORIAL: Usar Eventually para asincronía
+
+			By("Comprobando que el operador ha creado el Deployment con la imagen correcta")
+			Eventually(func(g Gomega) {
+				var dep appsv1.Deployment
+				g.Expect(k8sClient.Get(ctx, typeNamespacedName, &dep)).To(Succeed())
+				g.Expect(dep.Spec.Template.Spec.Containers[0].Image).To(Equal("nginx:latest"))
+			}, "10s", "250ms").Should(Succeed())
+
+			By("Comprobando que el operador ha actualizado el Status a Ready=True")
+			Eventually(func(g Gomega) {
+				var got platformv1alpha1.CoreApp
+				g.Expect(k8sClient.Get(ctx, typeNamespacedName, &got)).To(Succeed())
+
+				cond := apimeta.FindStatusCondition(got.Status.Conditions, "Ready")
+				g.Expect(cond).NotTo(BeNil())
+				g.Expect(cond.Status).To(Equal(metav1.ConditionTrue))
+			}, "10s", "250ms").Should(Succeed())
 		})
 	})
 })
