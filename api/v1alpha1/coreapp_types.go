@@ -75,6 +75,17 @@ type Volumes struct {
 	Secrets []ConfigMount `json:"secrets,omitempty"`
 }
 
+// ProbeConfig defines health checks for the application
+type ProbeConfig struct {
+	// Liveness probe determines if the container is running properly
+	// +optional
+	Liveness *corev1.Probe `json:"liveness,omitempty"`
+
+	// Readiness probe determines if the container is ready to accept traffic
+	// +optional
+	Readiness *corev1.Probe `json:"readiness,omitempty"`
+}
+
 // CoreAppSpec defines the desired state of CoreApp
 type CoreAppSpec struct {
 	// Image defines the container image to run
@@ -98,6 +109,10 @@ type CoreAppSpec struct {
 	// Route (optional) exposes the application externally. If nil, it is purely internal.
 	// +optional
 	Route *AppRoute `json:"route,omitempty"`
+
+	// Probes (optional) configures Liveness and Readiness checks
+	// +optional
+	Probes *ProbeConfig `json:"probes,omitempty"`
 
 	// Env supports native hardcoded variables and valueFrom (ConfigMaps/Secrets)
 	// +optional
@@ -163,10 +178,12 @@ type CoreAppStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".spec.image"
+// +kubebuilder:printcolumn:name="Port",type="integer",JSONPath=".spec.port"
 // +kubebuilder:printcolumn:name="MinRep",type="integer",JSONPath=".spec.autoscaling.minReplicas"
 // +kubebuilder:printcolumn:name="MaxRep",type="integer",JSONPath=".spec.autoscaling.maxReplicas"
+// +kubebuilder:printcolumn:name="Host",type="string",JSONPath=".spec.route.host",priority=1
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
-
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // CoreApp is the Schema for the coreapps API
 type CoreApp struct {
 	metav1.TypeMeta   `json:",inline"`

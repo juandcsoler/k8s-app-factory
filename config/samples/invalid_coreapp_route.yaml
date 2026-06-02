@@ -1,0 +1,21 @@
+apiVersion: platform.juandc.dev/v1alpha1
+kind: CoreApp
+metadata:
+  name: coreapp-invalid-route
+  namespace: default
+spec:
+  image: nginx:latest
+  port: 80
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 3
+  route:
+    host: ""  # <-- ERROR: route.host cannot be empty when route is specified
+    path: "/"

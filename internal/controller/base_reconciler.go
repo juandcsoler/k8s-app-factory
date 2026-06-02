@@ -24,6 +24,8 @@ import (
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/juandcsoler/k8s-app-factory/internal/metrics"
 )
 
 // ============================================================================
@@ -66,14 +68,28 @@ type GenericReconciler struct {
 
 // ReconcileBase es el esqueleto invariable del algoritmo de reconciliación.
 func (r *GenericReconciler) ReconcileBase(ctx context.Context, req ctrl.Request, emptyObj client.Object) (ctrl.Result, error) {
+	start := time.Now()
+	resultStatus := "success"
+
+	defer func() {
+		metrics.ReconcileDuration.WithLabelValues(req.Name, req.Namespace).Observe(time.Since(start).Seconds())
+		metrics.ReconcileTotal.WithLabelValues(req.Name, req.Namespace, resultStatus).Inc()
+	}()
+
 	// 1. Fetch: Cargar el objeto primario desde el clúster
 	if err := r.Get(ctx, req.NamespacedName, emptyObj); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if client.IgnoreNotFound(err) == nil {
+			resultStatus = "not_found"
+			return ctrl.Result{}, nil
+		}
+		resultStatus = "error"
+		return ctrl.Result{}, err
 	}
 
 	// 2. State: Pedir a la estrategia que construya el contexto para este ciclo
 	reconcileCtx, err := r.Strategy.BuildContext(ctx, emptyObj, r.Client, r.Recorder)
 	if err != nil {
+		resultStatus = "error"
 		return ctrl.Result{}, err
 	}
 
@@ -85,10 +101,14 @@ func (r *GenericReconciler) ReconcileBase(ctx context.Context, req ctrl.Request,
 		result, err := step()
 
 		if err != nil {
+			resultStatus = "error"
 			return ctrl.Result{}, err // Fallo: K8s aplicará backoff
 		}
 
 		if result.Stop {
+			if result.RequeueAfter > 0 {
+				resultStatus = "requeued"
+			}
 			return ctrl.Result{RequeueAfter: result.RequeueAfter}, nil // Parada controlada
 		}
 	}

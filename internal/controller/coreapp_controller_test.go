@@ -23,6 +23,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -71,12 +73,42 @@ var _ = Describe("CoreApp Controller", func() {
 		It("debería crear el Deployment y marcar Ready=True", func() {
 			// REGLA DE ORO DEL TUTORIAL: Usar Eventually para asincronía
 
-			By("Comprobando que el operador ha creado el Deployment con la imagen correcta")
+			By("Comprobando que el operador ha creado el Deployment con la imagen correcta y mejoras de resiliencia")
+			var dep appsv1.Deployment
 			Eventually(func(g Gomega) {
-				var dep appsv1.Deployment
 				g.Expect(k8sClient.Get(ctx, typeNamespacedName, &dep)).To(Succeed())
 				g.Expect(dep.Spec.Template.Spec.Containers[0].Image).To(Equal("nginx:latest"))
+
+				// Validar features de resiliencia
+				g.Expect(dep.Spec.Template.Spec.Containers[0].Lifecycle).NotTo(BeNil())
+				g.Expect(dep.Spec.Template.Spec.Containers[0].Lifecycle.PreStop).NotTo(BeNil())
+				g.Expect(dep.Spec.Template.Spec.TopologySpreadConstraints).NotTo(BeEmpty())
+				g.Expect(dep.Spec.Template.Spec.TopologySpreadConstraints[0].TopologyKey).To(Equal("kubernetes.io/hostname"))
 			}, "10s", "250ms").Should(Succeed())
+
+			By("Comprobando que el operador ha creado la NetworkPolicy por defecto")
+			var netpol networkingv1.NetworkPolicy
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, typeNamespacedName, &netpol)).To(Succeed())
+				g.Expect(netpol.Spec.PolicyTypes).To(ContainElement(networkingv1.PolicyTypeIngress))
+				g.Expect(netpol.Spec.PolicyTypes).To(ContainElement(networkingv1.PolicyTypeEgress))
+			}, "10s", "250ms").Should(Succeed())
+
+			By("Comprobando que el operador ha creado el ServiceAccount y ConfigMap")
+			var sa corev1.ServiceAccount
+			var cm corev1.ConfigMap
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: resourceName + "-sa", Namespace: "default"}, &sa)).To(Succeed())
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: resourceName + "-metadata", Namespace: "default"}, &cm)).To(Succeed())
+				g.Expect(cm.Data).To(HaveKeyWithValue("APP_NAME", resourceName))
+				g.Expect(cm.Data).To(HaveKeyWithValue("APP_VERSION", "nginx:latest"))
+			}, "10s", "250ms").Should(Succeed())
+
+			By("Simulando que el Deployment está Ready")
+			dep.Status.Replicas = 1
+			dep.Status.ReadyReplicas = 1
+			dep.Status.AvailableReplicas = 1
+			Expect(k8sClient.Status().Update(ctx, &dep)).To(Succeed())
 
 			By("Comprobando que el operador ha actualizado el Status a Ready=True")
 			Eventually(func(g Gomega) {
