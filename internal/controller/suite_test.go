@@ -63,7 +63,7 @@ var _ = BeforeSuite(func() {
 	err = platformv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	// NUEVO: Añadimos Gateway API al Scheme de los tests
+	// NEW: Add Gateway API to the Scheme for tests
 	err = gatewayv1.Install(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -73,7 +73,7 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "config", "crd", "bases"),
-			filepath.Join("..", "..", "test", "external-crds"), // NUEVA LÍNEA: Cargamos los CRDs de Gateway API
+			filepath.Join("..", "..", "test", "external-crds"), // NEW LINE: Load Gateway API CRDs
 		},
 		ErrorIfCRDPathMissing: true,
 	}
@@ -91,17 +91,17 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient).NotTo(BeNil())
 
 	// =========================================================================
-	// NUEVO: ARRANCAR EL MANAGER CON NUESTRA ARQUITECTURA EN LOS TESTS
+	// NEW: START THE MANAGER WITH OUR ARCHITECTURE IN TESTS
 	// =========================================================================
 
-	// 1. Creamos el Manager (desactivamos el puerto de métricas para evitar choques)
+	// 1. Create the Manager (disable metrics port to avoid collisions)
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:  scheme.Scheme,
 		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	// 2. Registramos nuestro controlador usando el patrón Strategy
+	// 2. Register our controller using the Strategy pattern
 	err = (&CoreAppReconciler{
 		GenericReconciler: GenericReconciler{
 			Client:   k8sManager.GetClient(),
@@ -112,7 +112,7 @@ var _ = BeforeSuite(func() {
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	// 3. Arrancamos el Manager en segundo plano para que escuche eventos durante los tests
+	// 3. Start the Manager in the background so it listens to events during tests
 	go func() {
 		defer GinkgoRecover()
 		err = k8sManager.Start(ctx)

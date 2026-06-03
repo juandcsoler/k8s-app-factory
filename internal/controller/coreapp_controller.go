@@ -37,7 +37,7 @@ import (
 )
 
 // ============================================================================
-// 1. EL CONTEXTO
+// 1. THE CONTEXT
 // ============================================================================
 type coreAppCtx struct {
 	ctx              context.Context
@@ -53,7 +53,7 @@ func (c *coreAppCtx) GetObject() client.Object {
 }
 
 // ============================================================================
-// 2. LA ESTRATEGIA
+// 2. THE STRATEGY
 // ============================================================================
 type CoreAppStrategy struct{}
 
@@ -85,7 +85,7 @@ func (s CoreAppStrategy) GetPipeline(rc ReconciliationContext) []StepFunction {
 }
 
 // ============================================================================
-// 3. EL CONTROLADOR
+// 3. THE CONTROLLER
 // ============================================================================
 type CoreAppReconciler struct {
 	GenericReconciler
@@ -107,10 +107,10 @@ func (r *CoreAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *CoreAppReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// GenerationChangedPredicate filtra eventos de status en recursos hijos,
-	// evitando reconciliaciones innecesarias (ej: HPA actualizando métricas,
-	// Deployment transicionando pods). Solo cambios en .spec (que incrementan
-	// metadata.generation) re-encolan el CoreApp padre.
+	// GenerationChangedPredicate filters status events in child resources,
+	// avoiding unnecessary reconciliations (e.g., HPA updating metrics,
+	// Deployment transitioning pods). Only changes in .spec (which increment
+	// metadata.generation) will trigger a re-queue of the parent CoreApp.
 	genChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
 
 	return ctrl.NewControllerManagedBy(mgr).

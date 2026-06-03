@@ -174,21 +174,21 @@ func (c *coreAppCtx) updateStatusOnSuccess() (StepResult, error) {
 		}
 	}
 
-	// 2. Comprobamos si el Status actual ya refleja esto
+	// 2. Check if the current Status already reflects this
 	wasReady := apimeta.IsStatusConditionTrue(c.app.Status.Conditions, "Ready")
 	alreadyReflectsState := wasReady == isReady
 	alreadyObserved := c.app.Status.ObservedGeneration == c.app.Generation
 
-	// 3. Si ya estábamos en este estado, no hacemos nada extra en el API Server
+	// 3. If we are already in this state, do not trigger an update in the API Server
 	if alreadyReflectsState && alreadyObserved {
 		if !isReady {
-			// Si no está ready, re-encolamos para seguir comprobando
+			// If not ready, requeue to keep checking
 			return StepResult{Stop: true, RequeueAfter: 5 * time.Second}, nil
 		}
 		return StepResult{}, nil
 	}
 
-	// 4. Si hay cambios, actualizamos el Status
+	// 4. If there are changes, update the Status
 	apimeta.SetStatusCondition(&c.app.Status.Conditions, newReadyCondition)
 	c.app.Status.ObservedGeneration = c.app.Generation
 	c.app.Status.CreatedResources = c.createdResources
@@ -198,7 +198,7 @@ func (c *coreAppCtx) updateStatusOnSuccess() (StepResult, error) {
 		return StepResult{}, err
 	}
 
-	// 5. Emitimos eventos según el estado
+	// 5. Emit events based on readiness state
 	if isReady {
 		c.recorder.Eventf(c.app, nil, corev1.EventTypeNormal, "Reconciled", "ApplySuccess", "All resources successfully provisioned.")
 		c.logger.Info("CoreApp successfully reconciled and status updated")
@@ -210,7 +210,7 @@ func (c *coreAppCtx) updateStatusOnSuccess() (StepResult, error) {
 	return StepResult{}, nil
 }
 
-// Helpers operativos
+// Operational helpers
 func (c *coreAppCtx) applyResource(acObject runtime.ApplyConfiguration) error {
 	return c.client.Apply(c.ctx, acObject, client.ForceOwnership, client.FieldOwner("coreapp-operator"))
 }
@@ -230,7 +230,7 @@ func (c *coreAppCtx) updateStatusWithError(reason string, err error) (StepResult
 
 	if updateErr := c.client.Status().Update(c.ctx, c.app); updateErr != nil {
 		c.logger.Error(updateErr, "failed to update Status with error condition")
-		// Devolvemos el error original para que el reconcile falle por la causa raíz
+		// Return the original error so the reconcile fails for the root cause
 	}
 
 	c.recorder.Eventf(c.app, nil, corev1.EventTypeWarning, reason, "ReconcileError", err.Error())

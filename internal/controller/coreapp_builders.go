@@ -267,10 +267,10 @@ func (c *coreAppCtx) buildHTTPRoute() *gatewayv1ac.HTTPRouteApplyConfiguration {
 	pathMatchPrefix := gatewayv1.PathMatchPathPrefix
 	port := gatewayv1.PortNumber(c.app.Spec.Port)
 
-	// Especificamos explícitamente los valores por defecto de Gateway API
-	// (Group, Kind, Weight) para que SSA no detecte diferencias entre nuestro
-	// apply configuration y el estado real del servidor en el primer ciclo,
-	// evitando una escritura extra por actualización de managedFields.
+	// We explicitly specify the default values of Gateway API
+	// (Group, Kind, Weight) so that SSA does not detect differences between our
+	// apply configuration and the actual server state in the first cycle,
+	// preventing an extra write due to managedFields updates.
 	parentGroup := gatewayv1.Group(gatewayv1.GroupName)
 	parentKind := gatewayv1.Kind("Gateway")
 	backendGroup := gatewayv1.Group("")
@@ -299,7 +299,7 @@ func (c *coreAppCtx) buildHTTPRoute() *gatewayv1ac.HTTPRouteApplyConfiguration {
 					WithWeight(backendWeight))))
 }
 
-// Helpers de conversión JSON
+// JSON conversion helpers
 func convertEnvVars(envs []corev1.EnvVar) ([]*corev1ac.EnvVarApplyConfiguration, error) {
 	if len(envs) == 0 {
 		return nil, nil

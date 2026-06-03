@@ -29,36 +29,36 @@ import (
 )
 
 // ============================================================================
-// 1. TIPOS GENÉRICOS (El contrato del Framework)
+// 1. GENERIC TYPES (The Framework Contract)
 // ============================================================================
 
-// StepResult define el resultado de un único paso de reconciliación.
+// StepResult defines the outcome of a single reconciliation step.
 type StepResult struct {
 	Stop         bool
 	RequeueAfter time.Duration
 }
 
-// ReconciliationContext es la interfaz base que agrupa el estado de una ejecución.
+// ReconciliationContext is the base interface that groups the state of an execution.
 type ReconciliationContext interface {
 	GetObject() client.Object
 }
 
-// StepFunction es la firma que debe tener cualquier paso del pipeline.
+// StepFunction is the signature that any pipeline step must implement.
 type StepFunction func() (StepResult, error)
 
-// ReconciliationStrategy es el contrato que cada operador específico debe cumplir.
-// Define cómo inyectar la lógica concreta dentro de este motor genérico.
+// ReconciliationStrategy is the contract that each specific operator must fulfill.
+// It defines how to inject the concrete logic into this generic engine.
 type ReconciliationStrategy interface {
 	BuildContext(ctx context.Context, obj client.Object, c client.Client, rec events.EventRecorder) (ReconciliationContext, error)
 	GetPipeline(ctx ReconciliationContext) []StepFunction
 }
 
 // ============================================================================
-// 2. EL MOTOR PRINCIPAL (Template Method)
+// 2. THE MAIN ENGINE (Template Method)
 // ============================================================================
 
-// GenericReconciler contiene las dependencias genéricas de Kubernetes
-// y el proveedor de lógica específico del operador.
+// GenericReconciler holds the generic Kubernetes dependencies
+// and the operator-specific logic provider.
 type GenericReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
@@ -66,7 +66,7 @@ type GenericReconciler struct {
 	Strategy ReconciliationStrategy
 }
 
-// ReconcileBase es el esqueleto invariable del algoritmo de reconciliación.
+// ReconcileBase is the invariant skeleton of the reconciliation algorithm.
 func (r *GenericReconciler) ReconcileBase(ctx context.Context, req ctrl.Request, emptyObj client.Object) (ctrl.Result, error) {
 	start := time.Now()
 	resultStatus := "success"
@@ -76,7 +76,7 @@ func (r *GenericReconciler) ReconcileBase(ctx context.Context, req ctrl.Request,
 		metrics.ReconcileTotal.WithLabelValues(req.Name, req.Namespace, resultStatus).Inc()
 	}()
 
-	// 1. Fetch: Cargar el objeto primario desde el clúster
+	// 1. Fetch: Load the primary object from the cluster
 	if err := r.Get(ctx, req.NamespacedName, emptyObj); err != nil {
 		if client.IgnoreNotFound(err) == nil {
 			resultStatus = "not_found"
@@ -86,33 +86,33 @@ func (r *GenericReconciler) ReconcileBase(ctx context.Context, req ctrl.Request,
 		return ctrl.Result{}, err
 	}
 
-	// 2. State: Pedir a la estrategia que construya el contexto para este ciclo
+	// 2. Setup: Build the execution context
 	reconcileCtx, err := r.Strategy.BuildContext(ctx, emptyObj, r.Client, r.Recorder)
 	if err != nil {
 		resultStatus = "error"
 		return ctrl.Result{}, err
 	}
 
-	// 3. Strategy: Obtener el pipeline de pasos del operador específico
+	// 3. Strategy: Get the pipeline of steps from the specific operator
 	steps := r.Strategy.GetPipeline(reconcileCtx)
 
-	// 4. Execution: Iterar sobre el pipeline
+	// 4. Execution: Iterate over the pipeline
 	for _, step := range steps {
 		result, err := step()
 
 		if err != nil {
 			resultStatus = "error"
-			return ctrl.Result{}, err // Fallo: K8s aplicará backoff
+			return ctrl.Result{}, err // Failure: K8s will apply backoff
 		}
 
 		if result.Stop {
 			if result.RequeueAfter > 0 {
 				resultStatus = "requeued"
 			}
-			return ctrl.Result{RequeueAfter: result.RequeueAfter}, nil // Parada controlada
+			return ctrl.Result{RequeueAfter: result.RequeueAfter}, nil // Controlled stop
 		}
 	}
 
-	// 5. Finalización exitosa
+	// 5. Successful completion
 	return ctrl.Result{}, nil
 }
