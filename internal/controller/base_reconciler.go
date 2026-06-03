@@ -57,6 +57,13 @@ type ReconciliationStrategy interface {
 // 2. THE MAIN ENGINE (Template Method)
 // ============================================================================
 
+const (
+	statusSuccess  = "success"
+	statusError    = "error"
+	statusNotFound = "not_found"
+	statusRequeued = "requeued"
+)
+
 // GenericReconciler holds the generic Kubernetes dependencies
 // and the operator-specific logic provider.
 type GenericReconciler struct {
@@ -69,7 +76,7 @@ type GenericReconciler struct {
 // ReconcileBase is the invariant skeleton of the reconciliation algorithm.
 func (r *GenericReconciler) ReconcileBase(ctx context.Context, req ctrl.Request, emptyObj client.Object) (ctrl.Result, error) {
 	start := time.Now()
-	resultStatus := "success"
+	resultStatus := statusSuccess
 
 	defer func() {
 		metrics.ReconcileDuration.WithLabelValues(req.Name, req.Namespace).Observe(time.Since(start).Seconds())
@@ -79,17 +86,17 @@ func (r *GenericReconciler) ReconcileBase(ctx context.Context, req ctrl.Request,
 	// 1. Fetch: Load the primary object from the cluster
 	if err := r.Get(ctx, req.NamespacedName, emptyObj); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			resultStatus = "not_found"
+			resultStatus = statusNotFound
 			return ctrl.Result{}, nil
 		}
-		resultStatus = "error"
+		resultStatus = statusError
 		return ctrl.Result{}, err
 	}
 
 	// 2. Setup: Build the execution context
 	reconcileCtx, err := r.Strategy.BuildContext(ctx, emptyObj, r.Client, r.Recorder)
 	if err != nil {
-		resultStatus = "error"
+		resultStatus = statusError
 		return ctrl.Result{}, err
 	}
 
@@ -101,13 +108,13 @@ func (r *GenericReconciler) ReconcileBase(ctx context.Context, req ctrl.Request,
 		result, err := step()
 
 		if err != nil {
-			resultStatus = "error"
+			resultStatus = statusError
 			return ctrl.Result{}, err // Failure: K8s will apply backoff
 		}
 
 		if result.Stop {
 			if result.RequeueAfter > 0 {
-				resultStatus = "requeued"
+				resultStatus = statusRequeued
 			}
 			return ctrl.Result{RequeueAfter: result.RequeueAfter}, nil // Controlled stop
 		}

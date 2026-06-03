@@ -265,7 +265,6 @@ func (c *coreAppCtx) buildPDB() *policyv1ac.PodDisruptionBudgetApplyConfiguratio
 func (c *coreAppCtx) buildHTTPRoute() *gatewayv1ac.HTTPRouteApplyConfiguration {
 	labels := c.buildLabels()
 	pathMatchPrefix := gatewayv1.PathMatchPathPrefix
-	port := gatewayv1.PortNumber(c.app.Spec.Port)
 
 	// We explicitly specify the default values of Gateway API
 	// (Group, Kind, Weight) so that SSA does not detect differences between our
@@ -295,7 +294,7 @@ func (c *coreAppCtx) buildHTTPRoute() *gatewayv1ac.HTTPRouteApplyConfiguration {
 					WithGroup(backendGroup).
 					WithKind(backendKind).
 					WithName(gatewayv1.ObjectName(c.app.Name)).
-					WithPort(port).
+					WithPort(c.app.Spec.Port).
 					WithWeight(backendWeight))))
 }
 

@@ -79,6 +79,13 @@ jobs:
           # ECR supports OCI artifacts, so we can push Helm charts directly to it
           # First, update the chart version to match the git tag (removing the 'v' prefix)
           VERSION=${GITHUB_REF_NAME#v}
+          echo "CHART_VERSION=$VERSION" >> $GITHUB_ENV
+          
+          # Inject the real AWS ECR image into the Helm chart's values.yaml
+          REGISTRY=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+          yq e -i ".controllerManager.container.image.repository = \"$REGISTRY\"" dist/chart/values.yaml
+          yq e -i ".controllerManager.container.image.tag = \"${{ github.ref_name }}\"" dist/chart/values.yaml
+          
           helm package dist/chart --version $VERSION --app-version $VERSION
           
           # Login Helm to ECR (using the token from the aws-actions/amazon-ecr-login step)
@@ -92,4 +99,12 @@ jobs:
         with:
           name: install.yaml
           path: dist/install.yaml
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/install.yaml
+            k8s-app-factory-${{ env.CHART_VERSION }}.tgz
 

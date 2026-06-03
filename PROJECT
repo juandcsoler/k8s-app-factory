@@ -7,7 +7,9 @@ domain: juandc.dev
 layout:
 - go.kubebuilder.io/v4
 plugins:
-  helm.kubebuilder.io/v1-alpha: {}
+  helm.kubebuilder.io/v2-alpha:
+    manifests: dist/install.yaml
+    output: dist
 projectName: k8s-app-factory
 repo: github.com/juandcsoler/k8s-app-factory
 resources:
