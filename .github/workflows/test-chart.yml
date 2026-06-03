@@ -7,10 +7,10 @@ on:
 permissions: {}
 
 jobs:
-  test-e2e:
+  test-chart:
     permissions:
       contents: read
-    name: Run on Ubuntu
+    name: Run Chart Tests
     runs-on: ubuntu-latest
     steps:
       - name: Clone the code

@@ -5,17 +5,18 @@ on:
     tags:
       - 'v*' # Triggers when a new tag is pushed (e.g. v0.1.0)
 
-# Required permissions for OIDC authentication with AWS
+# Required permissions for OIDC authentication with AWS and creating GitHub Releases
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 env:
   # It is a best practice to keep AWS Region and Repository names as repository variables,
   # and the Role ARN as a GitHub Secret.
   AWS_REGION: ${{ vars.AWS_REGION }}               
   AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}        
+  ECR_IMAGE_REPOSITORY: ${{ vars.ECR_IMAGE_REPOSITORY }} # e.g., k8s-app-factory-controller
+  ECR_CHART_REGISTRY_PATH: ${{ vars.ECR_CHART_REGISTRY_PATH }} # Optional prefix, e.g., "charts" if your repo is "charts/k8s-app-factory". Leave empty for root.        
 
 jobs:
   build-and-push:
@@ -50,7 +51,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_IMAGE_REPOSITORY }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -72,7 +73,7 @@ jobs:
 
       - name: Generate Installer Bundle
         run: |
-          make build-installer IMG=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.ref_name }}
+          make build-installer IMG=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_IMAGE_REPOSITORY }}:${{ github.ref_name }}
 
       - name: Package and Push Helm Chart to ECR
         run: |
@@ -82,17 +83,19 @@ jobs:
           echo "CHART_VERSION=$VERSION" >> $GITHUB_ENV
           
           # Inject the real AWS ECR image into the Helm chart's values.yaml
-          REGISTRY=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
-          yq e -i ".controllerManager.container.image.repository = \"$REGISTRY\"" dist/chart/values.yaml
-          yq e -i ".controllerManager.container.image.tag = \"${{ github.ref_name }}\"" dist/chart/values.yaml
+          REGISTRY=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_IMAGE_REPOSITORY }}
+          yq e -i ".manager.image.repository = \"$REGISTRY\"" dist/chart/values.yaml
+          yq e -i ".manager.image.tag = \"${{ github.ref_name }}\"" dist/chart/values.yaml
           
           helm package dist/chart --version $VERSION --app-version $VERSION
           
           # Login Helm to ECR (using the token from the aws-actions/amazon-ecr-login step)
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | helm registry login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
           
-          # Push the chart via OCI
-          helm push k8s-app-factory-${VERSION}.tgz oci://${{ steps.login-ecr.outputs.registry }}
+          # Push the chart via OCI (Helm will automatically append the chart name 'k8s-app-factory' to this URL)
+          # If ECR_CHART_REGISTRY_PATH is empty, it pushes to /k8s-app-factory
+          # If ECR_CHART_REGISTRY_PATH is 'charts', it pushes to /charts/k8s-app-factory
+          helm push k8s-app-factory-${VERSION}.tgz oci://${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_CHART_REGISTRY_PATH }}
 
       - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4

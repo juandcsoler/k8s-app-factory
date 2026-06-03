@@ -55,7 +55,29 @@ graph TD;
 
 ### 1. Install the Operator
 
-You can deploy the operator directly to your cluster using `make`:
+**Option A: Helm Chart (Recommended)**
+
+```bash
+# From a GitHub Release (OCI)
+helm install k8s-app-factory oci://YOUR_ECR_REGISTRY/k8s-app-factory --version 0.1.0 \
+  --create-namespace --namespace k8s-app-factory-system
+
+# Or from local source
+helm install k8s-app-factory ./dist/chart \
+  --create-namespace --namespace k8s-app-factory-system
+```
+
+> **Note:** The operator requires [cert-manager](https://cert-manager.io/) to be installed in the cluster for webhook TLS certificates.
+
+**Option B: Static Manifest**
+
+Download the `install.yaml` from the [GitHub Releases](https://github.com/juandc/k8s-app-factory/releases) page:
+
+```bash
+kubectl apply -f https://github.com/juandc/k8s-app-factory/releases/latest/download/install.yaml
+```
+
+**Option C: Build from source**
 
 ```bash
 # Build and push the controller image to your registry
@@ -137,7 +159,19 @@ The operator exports rich Prometheus metrics via a secure HTTPS endpoint (`:8443
 ## 🛠 CI/CD & Releases
 
 This repository includes a robust GitHub Actions pipeline (`release.yml`). 
-Whenever a new semantic tag (e.g., `v1.2.0`) is pushed, the pipeline uses **AWS OIDC** to securely authenticate with AWS, builds a multi-architecture Docker image (`linux/amd64` and `linux/arm64`), and pushes it to **Amazon ECR**.
+Whenever a new semantic tag (e.g., `v1.2.0`) is pushed, the pipeline:
+
+1. Runs the full test suite as a gatekeeper.
+2. Authenticates with AWS via **OIDC** (no long-lived credentials).
+3. Builds a multi-architecture Docker image (`linux/amd64` + `linux/arm64`) and pushes it to **Amazon ECR**.
+4. Packages the Helm chart (with the ECR image injected) and pushes it as an **OCI artifact** to ECR.
+5. Creates a **GitHub Release** with the `install.yaml` bundle and the `.tgz` Helm chart attached.
+
+Additional CI pipelines run on every push and PR:
+- **Lint** (`lint.yml`): golangci-lint with custom plugins.
+- **Tests** (`test.yml`): Unit and integration tests via `envtest`.
+- **E2E Tests** (`test-e2e.yml`): Full end-to-end tests on a Kind cluster.
+- **Chart Tests** (`test-chart.yml`): Helm lint + real `helm install` on a Kind cluster with cert-manager.
 
 ---
 
