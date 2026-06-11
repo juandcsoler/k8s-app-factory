@@ -71,10 +71,10 @@ helm install platform-k8s-core-operator ./dist/chart \
 
 **Option B: Static Manifest**
 
-Download the `install.yaml` from the [GitHub Releases](https://github.com/juandc/platform-k8s-core-operator/releases) page:
+Download the `install.yaml` from the [GitHub Releases](https://github.com/juandcsoler/platform-k8s-core-operator/releases) page:
 
 ```bash
-kubectl apply -f https://github.com/juandc/platform-k8s-core-operator/releases/latest/download/install.yaml
+kubectl apply -f https://github.com/juandcsoler/platform-k8s-core-operator/releases/latest/download/install.yaml
 ```
 
 **Option C: Build from source**
