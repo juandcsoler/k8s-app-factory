@@ -4,17 +4,17 @@ kind: Certificate
 metadata:
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ include "k8s-app-factory.name" . }}
+    app.kubernetes.io/name: {{ include "platform-k8s-core-operator.name" . }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-  name: {{ include "k8s-app-factory.resourceName" (dict "suffix" "metrics-certs" "context" $) }}
+  name: {{ include "platform-k8s-core-operator.resourceName" (dict "suffix" "metrics-certs" "context" $) }}
   namespace: {{ .Release.Namespace }}
 spec:
   dnsNames:
-  - {{ include "k8s-app-factory.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "k8s-app-factory.namespaceName" $ }}.svc
-  - {{ include "k8s-app-factory.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "k8s-app-factory.namespaceName" $ }}.svc.cluster.local
+  - {{ include "platform-k8s-core-operator.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "platform-k8s-core-operator.namespaceName" $ }}.svc
+  - {{ include "platform-k8s-core-operator.resourceName" (dict "suffix" "controller-manager-metrics-service" "context" $) }}.{{ include "platform-k8s-core-operator.namespaceName" $ }}.svc.cluster.local
   issuerRef:
     kind: Issuer
-    name: {{ include "k8s-app-factory.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}
+    name: {{ include "platform-k8s-core-operator.resourceName" (dict "suffix" "selfsigned-issuer" "context" $) }}
   secretName: metrics-server-cert
 {{- end }}

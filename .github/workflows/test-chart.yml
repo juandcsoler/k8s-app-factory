@@ -35,11 +35,11 @@ jobs:
       - name: Create kind cluster
         run: kind create cluster
 
-      - name: Prepare k8s-app-factory
+      - name: Prepare platform-k8s-core-operator
         run: |
           go mod tidy
-          make docker-build IMG=k8s-app-factory:v0.1.0
-          kind load docker-image k8s-app-factory:v0.1.0
+          make docker-build IMG=platform-k8s-core-operator:v0.1.0
+          kind load docker-image platform-k8s-core-operator:v0.1.0
 
       - name: Install Helm
         run: |
@@ -83,13 +83,13 @@ jobs:
 
       - name: Install Helm chart for project
         run: |
-          helm install my-release ./dist/chart --create-namespace --namespace k8s-app-factory-system
+          helm install my-release ./dist/chart --create-namespace --namespace platform-k8s-core-operator-system
 
       - name: Check Helm release status
         run: |
-          helm status my-release --namespace k8s-app-factory-system
+          helm status my-release --namespace platform-k8s-core-operator-system
 
 # TODO: Uncomment if prometheus.enabled is set to true to confirm that the ServiceMonitor gets created
 #      - name: Check Presence of ServiceMonitor
 #        run: |
-#          kubectl wait --namespace k8s-app-factory-system --for=jsonpath='{.kind}'=ServiceMonitor servicemonitor/k8s-app-factory-controller-manager-metrics-monitor
+#          kubectl wait --namespace platform-k8s-core-operator-system --for=jsonpath='{.kind}'=ServiceMonitor servicemonitor/platform-k8s-core-operator-controller-manager-metrics-monitor

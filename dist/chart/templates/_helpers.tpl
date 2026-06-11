@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "k8s-app-factory.name" -}}
+{{- define "platform-k8s-core-operator.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "k8s-app-factory.fullname" -}}
+{{- define "platform-k8s-core-operator.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -27,7 +27,7 @@ If release name contains chart name it will be used as a full name.
 Namespace for generated references.
 Always uses the Helm release namespace.
 */}}
-{{- define "k8s-app-factory.namespaceName" -}}
+{{- define "platform-k8s-core-operator.namespaceName" -}}
 {{- .Release.Namespace }}
 {{- end }}
 
@@ -38,8 +38,8 @@ Takes a dict with:
   - .context: Template context (root context with .Values, .Release, etc.)
 Dynamically calculates safe truncation to ensure total name length <= 63 chars.
 */}}
-{{- define "k8s-app-factory.resourceName" -}}
-{{- $fullname := include "k8s-app-factory.fullname" .context }}
+{{- define "platform-k8s-core-operator.resourceName" -}}
+{{- $fullname := include "platform-k8s-core-operator.fullname" .context }}
 {{- $suffix := .suffix }}
 {{- $maxLen := sub 62 (len $suffix) | int }}
 {{- if gt (len $fullname) $maxLen }}
@@ -54,10 +54,10 @@ ServiceAccount name to use.
 If serviceAccount.enable is false and serviceAccount.name is set, use that name.
 Otherwise, use the standard resourceName helper with "controller-manager" suffix.
 */}}
-{{- define "k8s-app-factory.serviceAccountName" -}}
+{{- define "platform-k8s-core-operator.serviceAccountName" -}}
 {{- if and (not (.Values.serviceAccount.enable | default true)) .Values.serviceAccount.name }}
 {{- .Values.serviceAccount.name }}
 {{- else }}
-{{- include "k8s-app-factory.resourceName" (dict "suffix" "controller-manager" "context" .) }}
+{{- include "platform-k8s-core-operator.resourceName" (dict "suffix" "controller-manager" "context" .) }}
 {{- end }}
 {{- end }}

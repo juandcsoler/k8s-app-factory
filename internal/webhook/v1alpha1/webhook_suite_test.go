@@ -39,7 +39,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	platformv1alpha1 "github.com/juandcsoler/k8s-app-factory/api/v1alpha1"
+	platformv1alpha1 "github.com/juandcsoler/platform-k8s-core-operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 

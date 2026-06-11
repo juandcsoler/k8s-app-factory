@@ -10,8 +10,8 @@ plugins:
   helm.kubebuilder.io/v2-alpha:
     manifests: dist/install.yaml
     output: dist
-projectName: k8s-app-factory
-repo: github.com/juandcsoler/k8s-app-factory
+projectName: platform-k8s-core-operator
+repo: github.com/juandcsoler/platform-k8s-core-operator
 resources:
 - api:
     crdVersion: v1
@@ -20,7 +20,7 @@ resources:
   domain: juandc.dev
   group: platform
   kind: CoreApp
-  path: github.com/juandcsoler/k8s-app-factory/api/v1alpha1
+  path: github.com/juandcsoler/platform-k8s-core-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true

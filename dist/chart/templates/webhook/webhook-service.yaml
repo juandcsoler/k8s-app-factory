@@ -4,10 +4,10 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ include "k8s-app-factory.name" . }}
+    app.kubernetes.io/name: {{ include "platform-k8s-core-operator.name" . }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-  name: {{ include "k8s-app-factory.resourceName" (dict "suffix" "webhook-service" "context" $) }}
+  name: {{ include "platform-k8s-core-operator.resourceName" (dict "suffix" "webhook-service" "context" $) }}
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
@@ -15,6 +15,6 @@ spec:
     protocol: TCP
     targetPort: {{ .Values.webhook.port }}
   selector:
-    app.kubernetes.io/name: {{ include "k8s-app-factory.name" . }}
+    app.kubernetes.io/name: {{ include "platform-k8s-core-operator.name" . }}
     control-plane: controller-manager
 {{- end }}

@@ -1,6 +1,6 @@
-# Contributing to K8s App Factory
+# Contributing to K8s Core Operator
 
-Thank you for your interest in contributing to K8s App Factory! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to K8s Core Operator! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -46,8 +46,8 @@ Feature requests are welcome. Please open an issue describing:
 
 ```bash
 # Clone your fork
-git clone https://github.com/<your-user>/k8s-app-factory.git
-cd k8s-app-factory
+git clone https://github.com/<your-user>/platform-k8s-core-operator.git
+cd platform-k8s-core-operator
 
 # Install CRDs into a Kind cluster
 make install

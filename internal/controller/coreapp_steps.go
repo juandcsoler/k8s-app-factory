@@ -28,9 +28,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/juandcsoler/k8s-app-factory/internal/metrics"
+	"github.com/juandcsoler/platform-k8s-core-operator/internal/metrics"
 
-	platformv1alpha1 "github.com/juandcsoler/k8s-app-factory/api/v1alpha1"
+	platformv1alpha1 "github.com/juandcsoler/platform-k8s-core-operator/api/v1alpha1"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 

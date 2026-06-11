@@ -25,7 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/juandcsoler/k8s-app-factory/internal/metrics"
+	"github.com/juandcsoler/platform-k8s-core-operator/internal/metrics"
 )
 
 // ============================================================================

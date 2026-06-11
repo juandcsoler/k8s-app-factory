@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	platformv1alpha1 "github.com/juandcsoler/k8s-app-factory/api/v1alpha1"
+	platformv1alpha1 "github.com/juandcsoler/platform-k8s-core-operator/api/v1alpha1"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 

@@ -2,7 +2,7 @@ apiVersion: platform.juandc.dev/v1alpha1
 kind: CoreApp
 metadata:
   labels:
-    app.kubernetes.io/name: k8s-app-factory
+    app.kubernetes.io/name: platform-k8s-core-operator
     app.kubernetes.io/managed-by: kustomize
   name: coreapp-sample
 spec:

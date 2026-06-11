@@ -1,6 +1,6 @@
 apiVersion: v2
-name: k8s-app-factory
-description: A Helm chart to distribute k8s-app-factory
+name: platform-k8s-core-operator
+description: A Helm chart to distribute platform-k8s-core-operator
 type: application
 
 version: 0.1.0

@@ -1,4 +1,4 @@
-module github.com/juandcsoler/k8s-app-factory
+module github.com/juandcsoler/platform-k8s-core-operator
 
 go 1.26
 

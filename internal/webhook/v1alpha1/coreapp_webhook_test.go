@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	platformv1alpha1 "github.com/juandcsoler/k8s-app-factory/api/v1alpha1"
+	platformv1alpha1 "github.com/juandcsoler/platform-k8s-core-operator/api/v1alpha1"
 	// TODO (user): Add any additional imports if needed
 )
 

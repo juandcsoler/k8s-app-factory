@@ -35,7 +35,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayv1ac "sigs.k8s.io/gateway-api/applyconfiguration/apis/v1"
 
-	platformv1alpha1 "github.com/juandcsoler/k8s-app-factory/api/v1alpha1"
+	platformv1alpha1 "github.com/juandcsoler/platform-k8s-core-operator/api/v1alpha1"
 )
 
 func (c *coreAppCtx) buildLabels() map[string]string {

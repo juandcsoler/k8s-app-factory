@@ -1,11 +1,11 @@
-# K8s App Factory 🏭
+# K8s Core Operator ⚙️
 
-![Go Version](https://img.shields.io/badge/Go-1.24.6+-00ADD8?style=for-the-badge&logo=go)
+![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8?style=for-the-badge&logo=go)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-1.25+-326CE5?style=for-the-badge&logo=kubernetes)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge)
 
-**K8s App Factory** is an advanced Kubernetes Operator built with Kubebuilder. It abstracts the complexity of deploying stateless applications by providing a declarative `CoreApp` Custom Resource. 
+**K8s Core Operator** is an advanced Kubernetes Operator built with Kubebuilder. It abstracts the complexity of deploying stateless applications by providing a declarative `CoreApp` Custom Resource. 
 
 Instead of writing and maintaining hundreds of lines of YAML for Deployments, Services, RBAC, Autoscaling, and Network Policies, developers can simply define their application intent, and the operator will autonomously orchestrate the entire lifecycle with enterprise-grade resilience, security, and observability built-in.
 
@@ -30,7 +30,7 @@ The operator acts as an autonomous control loop that continuously watches the de
 ```mermaid
 graph TD;
     User([Developer]) -->|Applies| CR[CoreApp CRD]
-    CR -->|Triggers| Manager[K8s App Factory Operator]
+    CR -->|Triggers| Manager[K8s Core Operator]
     
     subgraph Reconciliation Pipeline
         Manager --> SA[1. Identity: ServiceAccount]
@@ -49,7 +49,7 @@ graph TD;
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Go v1.24.6+
+- Go v1.26+
 - Kubernetes cluster v1.25+ (Kind, EKS, GKE, etc.)
 - `kubectl` and `helm` installed
 
@@ -59,32 +59,32 @@ graph TD;
 
 ```bash
 # From a GitHub Release (OCI)
-helm install k8s-app-factory oci://YOUR_ECR_REGISTRY/k8s-app-factory --version 0.1.0 \
-  --create-namespace --namespace k8s-app-factory-system
+helm install platform-k8s-core-operator oci://YOUR_ECR_REGISTRY/platform-k8s-core-operator --version 0.1.0 \
+  --create-namespace --namespace platform-k8s-core-operator-system
 
 # Or from local source
-helm install k8s-app-factory ./dist/chart \
-  --create-namespace --namespace k8s-app-factory-system
+helm install platform-k8s-core-operator ./dist/chart \
+  --create-namespace --namespace platform-k8s-core-operator-system
 ```
 
 > **Note:** The operator requires [cert-manager](https://cert-manager.io/) to be installed in the cluster for webhook TLS certificates.
 
 **Option B: Static Manifest**
 
-Download the `install.yaml` from the [GitHub Releases](https://github.com/juandc/k8s-app-factory/releases) page:
+Download the `install.yaml` from the [GitHub Releases](https://github.com/juandc/platform-k8s-core-operator/releases) page:
 
 ```bash
-kubectl apply -f https://github.com/juandc/k8s-app-factory/releases/latest/download/install.yaml
+kubectl apply -f https://github.com/juandc/platform-k8s-core-operator/releases/latest/download/install.yaml
 ```
 
 **Option C: Build from source**
 
 ```bash
 # Build and push the controller image to your registry
-make docker-build docker-push IMG=your-registry/k8s-app-factory:v1.0.0
+make docker-build docker-push IMG=your-registry/platform-k8s-core-operator:v1.0.0
 
 # Deploy the CRDs and the Operator
-make deploy IMG=your-registry/k8s-app-factory:v1.0.0
+make deploy IMG=your-registry/platform-k8s-core-operator:v1.0.0
 ```
 
 ### 2. Create your first Application
