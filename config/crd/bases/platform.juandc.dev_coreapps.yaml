@@ -709,6 +709,15 @@ spec:
                 description: Route (optional) exposes the application externally.
                   If nil, it is purely internal.
                 properties:
+                  gatewayName:
+                    default: platform-gateway
+                    description: GatewayName specifies the target Gateway resource
+                    type: string
+                  gatewayNamespace:
+                    default: platform-gateway
+                    description: GatewayNamespace specifies the namespace of the target
+                      Gateway resource
+                    type: string
                   host:
                     type: string
                   path:

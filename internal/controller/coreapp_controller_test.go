@@ -27,6 +27,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -59,6 +60,12 @@ var _ = Describe("CoreApp Controller", func() {
 					// ADD THIS SO IT PASSES VALIDATION
 					Autoscaling: platformv1alpha1.Autoscaling{ // Adjust the Struct name if yours is different
 						MaxReplicas: 1,
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("32Mi"),
+						},
 					},
 				},
 			}
@@ -147,6 +154,12 @@ var _ = Describe("CoreApp Controller", func() {
 					Port:  3000,
 					Autoscaling: platformv1alpha1.Autoscaling{
 						MaxReplicas: 3,
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("32Mi"),
+						},
 					},
 					ServiceAccountName: "my-custom-sa",
 					PDB: &platformv1alpha1.PDBConfig{
@@ -276,6 +289,12 @@ var _ = Describe("CoreApp Controller", func() {
 					Port:  80,
 					Autoscaling: platformv1alpha1.Autoscaling{
 						MaxReplicas: 1,
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("32Mi"),
+						},
 					},
 					SecureByDefault: &secureByDefault,
 				},

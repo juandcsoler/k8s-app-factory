@@ -99,7 +99,9 @@ func (c *coreAppCtx) ensurePDB() (StepResult, error) {
 		c.createdResources = append(c.createdResources, platformv1alpha1.CreatedResource{Group: "policy", Kind: "PodDisruptionBudget", Name: c.app.Name})
 	} else {
 		pdb := &policyv1.PodDisruptionBudget{ObjectMeta: metav1.ObjectMeta{Name: c.app.Name, Namespace: c.app.Namespace}}
-		_ = c.client.Delete(c.ctx, pdb)
+		if err := c.client.Delete(c.ctx, pdb); err != nil && client.IgnoreNotFound(err) != nil {
+			c.logger.Error(err, "failed to delete unused PDB")
+		}
 	}
 	return StepResult{}, nil
 }
@@ -114,7 +116,9 @@ func (c *coreAppCtx) ensureNetworkPolicy() (StepResult, error) {
 		c.createdResources = append(c.createdResources, platformv1alpha1.CreatedResource{Group: "networking.k8s.io", Kind: "NetworkPolicy", Name: c.app.Name})
 	} else {
 		np := &networkingv1.NetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: c.app.Name, Namespace: c.app.Namespace}}
-		_ = c.client.Delete(c.ctx, np)
+		if err := c.client.Delete(c.ctx, np); err != nil && client.IgnoreNotFound(err) != nil {
+			c.logger.Error(err, "failed to delete unused NetworkPolicy")
+		}
 	}
 	return StepResult{}, nil
 }
@@ -129,7 +133,9 @@ func (c *coreAppCtx) ensureHTTPRoute() (StepResult, error) {
 		c.createdResources = append(c.createdResources, platformv1alpha1.CreatedResource{Group: "gateway.networking.k8s.io", Kind: "HTTPRoute", Name: c.app.Name})
 	} else {
 		route := &gatewayv1.HTTPRoute{ObjectMeta: metav1.ObjectMeta{Name: c.app.Name, Namespace: c.app.Namespace}}
-		_ = c.client.Delete(c.ctx, route)
+		if err := c.client.Delete(c.ctx, route); err != nil && client.IgnoreNotFound(err) != nil {
+			c.logger.Error(err, "failed to delete unused HTTPRoute")
+		}
 	}
 	return StepResult{}, nil
 }

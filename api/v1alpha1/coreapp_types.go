@@ -55,6 +55,12 @@ type AppRoute struct {
 	Host string `json:"host"`
 	// +kubebuilder:default="/"
 	Path string `json:"path,omitempty"`
+	// GatewayName specifies the target Gateway resource
+	// +kubebuilder:default="platform-gateway"
+	GatewayName string `json:"gatewayName,omitempty"`
+	// GatewayNamespace specifies the namespace of the target Gateway resource
+	// +kubebuilder:default="platform-gateway"
+	GatewayNamespace string `json:"gatewayNamespace,omitempty"`
 }
 
 // ConfigMount defines how and where to mount a ConfigMap or Secret

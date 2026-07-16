@@ -17,11 +17,15 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	platformv1alpha1 "github.com/juandcsoler/platform-k8s-core-operator/api/v1alpha1"
-	// TODO (user): Add any additional imports if needed
 )
 
 var _ = Describe("CoreApp Webhook", func() {
@@ -29,42 +33,61 @@ var _ = Describe("CoreApp Webhook", func() {
 		obj       *platformv1alpha1.CoreApp
 		oldObj    *platformv1alpha1.CoreApp
 		validator CoreAppCustomValidator
+		ctx       context.Context
 	)
 
 	BeforeEach(func() {
 		obj = &platformv1alpha1.CoreApp{}
 		oldObj = &platformv1alpha1.CoreApp{}
 		validator = CoreAppCustomValidator{}
+		ctx = context.Background()
 		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
 	})
 
-	AfterEach(func() {
-		// TODO (user): Add any teardown logic common to all tests
-	})
-
 	Context("When creating or updating CoreApp under Validating Webhook", func() {
-		// TODO (user): Add logic for validating webhooks
-		// Example:
-		// It("Should deny creation if a required field is missing", func() {
-		//     By("simulating an invalid creation scenario")
-		//     obj.SomeRequiredField = ""
-		//     Expect(validator.ValidateCreate(ctx, obj)).Error().To(HaveOccurred())
-		// })
-		//
-		// It("Should admit creation if all required fields are present", func() {
-		//     By("simulating an invalid creation scenario")
-		//     obj.SomeRequiredField = "valid_value"
-		//     Expect(validator.ValidateCreate(ctx, obj)).To(BeNil())
-		// })
-		//
-		// It("Should validate updates correctly", func() {
-		//     By("simulating a valid update scenario")
-		//     oldObj.SomeRequiredField = "updated_value"
-		//     obj.SomeRequiredField = "updated_value"
-		//     Expect(validator.ValidateUpdate(ctx, oldObj, obj)).To(BeNil())
-		// })
-	})
+		It("Should admit creation with valid data", func() {
+			obj.Spec.Autoscaling.MaxReplicas = 2
+			min := int32(1)
+			obj.Spec.Autoscaling.MinReplicas = &min
+			obj.Spec.Resources = corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("128Mi"),
+				},
+			}
+			warnings, err := validator.ValidateCreate(ctx, obj)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(warnings).To(BeNil())
+		})
 
+		It("Should deny creation if minReplicas > maxReplicas", func() {
+			obj.Spec.Autoscaling.MaxReplicas = 1
+			min := int32(2)
+			obj.Spec.Autoscaling.MinReplicas = &min
+			warnings, err := validator.ValidateCreate(ctx, obj)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("cannot exceed maxReplicas"))
+			Expect(warnings).To(BeNil())
+		})
+
+		It("Should deny creation if Route is present but Host is empty", func() {
+			obj.Spec.Autoscaling.MaxReplicas = 2
+			obj.Spec.Route = &platformv1alpha1.AppRoute{Host: ""}
+			warnings, err := validator.ValidateCreate(ctx, obj)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("route.host cannot be empty"))
+			Expect(warnings).To(BeNil())
+		})
+
+		It("Should deny creation if CPU or Memory requests are missing", func() {
+			obj.Spec.Autoscaling.MaxReplicas = 2
+			// Resources not set
+			warnings, err := validator.ValidateCreate(ctx, obj)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("resources.requests.cpu and resources.requests.memory are required"))
+			Expect(warnings).To(BeNil())
+		})
+	})
 })

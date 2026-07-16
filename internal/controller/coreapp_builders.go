@@ -163,12 +163,14 @@ func (c *coreAppCtx) buildDeployment() (*appsv1ac.DeploymentApplyConfiguration, 
 		}
 	} else {
 		// Default TCP socket probe
-		defaultProbe := corev1ac.Probe().
+		liveness = corev1ac.Probe().
 			WithTCPSocket(corev1ac.TCPSocketAction().WithPort(intstr.FromInt32(c.app.Spec.Port))).
 			WithInitialDelaySeconds(5).
 			WithPeriodSeconds(10)
-		liveness = defaultProbe
-		readiness = defaultProbe
+		readiness = corev1ac.Probe().
+			WithTCPSocket(corev1ac.TCPSocketAction().WithPort(intstr.FromInt32(c.app.Spec.Port))).
+			WithInitialDelaySeconds(5).
+			WithPeriodSeconds(10)
 	}
 
 	if liveness != nil {
@@ -181,6 +183,11 @@ func (c *coreAppCtx) buildDeployment() (*appsv1ac.DeploymentApplyConfiguration, 
 	saName := c.app.Name + "-sa"
 	if c.app.Spec.ServiceAccountName != "" {
 		saName = c.app.Spec.ServiceAccountName
+	}
+
+	var pullSecrets []*corev1ac.LocalObjectReferenceApplyConfiguration
+	for _, sec := range c.app.Spec.ImagePullSecrets {
+		pullSecrets = append(pullSecrets, corev1ac.LocalObjectReference().WithName(sec.Name))
 	}
 
 	return appsv1ac.Deployment(c.app.Name, c.app.Namespace).
@@ -196,6 +203,7 @@ func (c *coreAppCtx) buildDeployment() (*appsv1ac.DeploymentApplyConfiguration, 
 					WithTerminationGracePeriodSeconds(30).
 					WithTopologySpreadConstraints(topologySpreadConstraints...).
 					WithVolumes(volumes...).
+					WithImagePullSecrets(pullSecrets...).
 					WithContainers(container)))), nil
 }
 
@@ -276,6 +284,17 @@ func (c *coreAppCtx) buildHTTPRoute() *gatewayv1ac.HTTPRouteApplyConfiguration {
 	backendKind := gatewayv1.Kind("Service")
 	backendWeight := int32(1)
 
+	gatewayName := "platform-gateway"
+	gatewayNamespace := "platform-gateway"
+	if c.app.Spec.Route != nil {
+		if c.app.Spec.Route.GatewayName != "" {
+			gatewayName = c.app.Spec.Route.GatewayName
+		}
+		if c.app.Spec.Route.GatewayNamespace != "" {
+			gatewayNamespace = c.app.Spec.Route.GatewayNamespace
+		}
+	}
+
 	return gatewayv1ac.HTTPRoute(c.app.Name, c.app.Namespace).
 		WithLabels(labels).
 		WithOwnerReferences(c.ownerRef()).
@@ -283,7 +302,8 @@ func (c *coreAppCtx) buildHTTPRoute() *gatewayv1ac.HTTPRouteApplyConfiguration {
 			WithParentRefs(gatewayv1ac.ParentReference().
 				WithGroup(parentGroup).
 				WithKind(parentKind).
-				WithName("platform-gateway")).
+				WithName(gatewayv1.ObjectName(gatewayName)).
+				WithNamespace(gatewayv1.Namespace(gatewayNamespace))).
 			WithHostnames(gatewayv1.Hostname(c.app.Spec.Route.Host)).
 			WithRules(gatewayv1ac.HTTPRouteRule().
 				WithMatches(gatewayv1ac.HTTPRouteMatch().
@@ -358,6 +378,11 @@ func (c *coreAppCtx) buildNetworkPolicy() *networkingv1ac.NetworkPolicyApplyConf
 	tcp := corev1.ProtocolTCP
 	udp := corev1.ProtocolUDP
 
+	gatewayNamespace := "platform-gateway"
+	if c.app.Spec.Route != nil && c.app.Spec.Route.GatewayNamespace != "" {
+		gatewayNamespace = c.app.Spec.Route.GatewayNamespace
+	}
+
 	return networkingv1ac.NetworkPolicy(c.app.Name, c.app.Namespace).
 		WithLabels(labels).
 		WithOwnerReferences(c.ownerRef()).
@@ -370,7 +395,7 @@ func (c *coreAppCtx) buildNetworkPolicy() *networkingv1ac.NetworkPolicyApplyConf
 					WithPort(intstr.FromInt32(c.app.Spec.Port))).
 				WithFrom(
 					networkingv1ac.NetworkPolicyPeer().WithNamespaceSelector(
-						metav1ac.LabelSelector().WithMatchLabels(map[string]string{"kubernetes.io/metadata.name": "platform-gateway"}),
+						metav1ac.LabelSelector().WithMatchLabels(map[string]string{"kubernetes.io/metadata.name": gatewayNamespace}),
 					),
 					networkingv1ac.NetworkPolicyPeer().WithPodSelector(
 						metav1ac.LabelSelector().WithMatchLabels(labels),

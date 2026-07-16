@@ -85,5 +85,12 @@ func (v *CoreAppCustomValidator) validate(app *platformv1alpha1.CoreApp) error {
 		}
 	}
 
+	// Validate Resources
+	if app.Spec.Resources.Requests == nil ||
+		app.Spec.Resources.Requests.Cpu().IsZero() ||
+		app.Spec.Resources.Requests.Memory().IsZero() {
+		return fmt.Errorf("resources.requests.cpu and resources.requests.memory are required for the HorizontalPodAutoscaler to function correctly")
+	}
+
 	return nil
 }
